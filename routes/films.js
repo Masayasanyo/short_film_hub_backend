@@ -213,11 +213,8 @@ router.get('/trending', authenticateToken, async (req, res) => {
             description, 
             genre, 
             account_id, 
-            created_at, 
-            like_count:like(id) 
+            created_at
         `)
-        .gte('created_at', oneWeekAgo.toISOString())
-        .order('like_count', { ascending: false })
         .order('created_at', { ascending: false });
 
     if (error) {
@@ -404,6 +401,32 @@ router.post('/like/check', authenticateToken, async (req, res) => {
     } else {
         return res.status(200).json({ message: "You've not liked this film yet.", isLiked: false });
     }
+});
+
+// Send watchlist
+router.get('/watchlist', authenticateToken, async (req, res) => {
+    const userId = req.user.id;
+
+    const { data, error } = await supabase
+        .from('save')
+        .select(`
+            id, 
+            film_id, 
+            account_id, 
+            films (
+                id, 
+                thumbnail_url, 
+                title
+            )
+        `)
+        .eq('account_id', userId);
+
+    if (error) {
+        console.error(error);
+        return res.status(500).json({ error: "Internal server error." });
+    }
+
+    return res.status(200).json({ message: "Films retrieved successfully.", data: data });
 });
 
 export default router;
